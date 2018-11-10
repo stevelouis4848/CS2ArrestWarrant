@@ -19,7 +19,6 @@ public class CS2ArrestWarrant {
     public static int num_Of_Roads;
     //public static final int INFINITY = Double.POSITIVE_INFINITY;
     public static final int MAX_PASSENGERS = 20;
-    public static  int final_Destination;
     public static Scanner input = new Scanner(System.in);
   
     public static class Adj_City{
@@ -32,7 +31,7 @@ public class CS2ArrestWarrant {
         }
     }
 
-    public static class City_State{
+    public static class City_State implements Comparable<City_State>{
         
         int id, passengers, current_Cost;
         
@@ -40,6 +39,17 @@ public class CS2ArrestWarrant {
             id = a;
             passengers = b;
             current_Cost = c;
+        }
+        
+          @Override
+        public int compareTo(City_State c){
+        if(this.current_Cost < c.current_Cost)
+            return -1;
+        
+        else if(this.current_Cost > c.current_Cost)
+              return 1;
+        
+            return 0;
         }
     }
 
@@ -60,12 +70,12 @@ public class CS2ArrestWarrant {
         // Read the roads and store them in the adjacency list right away.
         nodes(num_Of_Pirates_Array, bribe_Cost_Array);
         
-        /*
+        
         for(int i = 0; i < num_Of_Cities; i++){
-            System.out.print(" Pirates[i]: " + num_Of_Pirates_Array[i]);
-            System.out.print(" bribe Costi]: " + bribe_Cost_Array[i] + "\n");
+            System.out.print(" Pirates[" + i + "]: " + num_Of_Pirates_Array[i]);
+            System.out.print(" bribe Cost[" + i +"]: " + bribe_Cost_Array[i] + "\n");
         }
-        */
+       
         
         edges(adjacencyList);
         System.out.print(" adjList Size: " + adjacencyList.size() + "\n");
@@ -76,12 +86,13 @@ public class CS2ArrestWarrant {
             for(int j = 0; j < adjacencyList.get(i).size(); j++){
 
                 System.out.print("Destination[" + i + 1 + "]: " + adjacencyList.get(i).get(j).destination + " Cost[" + i + 1 + "]: " + adjacencyList.get(i).get(j).edge_Cost + "\n");
-            }
-          
+            }         
         }
         */
         
-        dijkstra(adjacencyList, num_Of_Pirates_Array, bribe_Cost_Array);
+        System.out.print("min Cost: " + dijkstra(adjacencyList, num_Of_Pirates_Array, bribe_Cost_Array) + "\n");
+        
+        
         
     }
     
@@ -116,9 +127,9 @@ public class CS2ArrestWarrant {
         
     }
 
-    public static void dijkstra( ArrayList<ArrayList<Adj_City>> adjacencyList, int[]  num_Of_Pirates_Array, int[] bribe_Cost_Array){
+    public static int dijkstra( ArrayList<ArrayList<Adj_City>> adjacencyList, int[]  num_Of_Pirates_Array, int[] bribe_Cost_Array){
  
-        int current_City_Id = 0;
+        int current_City_Id = 1;
         int num_Of_Passengers = 20;
         int overall_Cost = 0;
         int num_Of_AdjCities;
@@ -126,51 +137,73 @@ public class CS2ArrestWarrant {
         int adj_City_Cost;
         City_State considered_City;
         City_State pop_City;
+        
+        int final_Destination = num_Of_Cities;
 
         // Comparator<Integer> comparator = new IntComparator();
         
         // Visited array automaticaly initialiized to 0  for all possible states.
         int [][] visited = new int[num_Of_Cities][MAX_PASSENGERS];
+        
+        for(int i = 0; i < MAX_PASSENGERS; i++){
+            visited[0][i] = 1;
+        }
        
         //Priority queue of states ordered by the cost indexes
         //Needs a comparator.
         PriorityQueue<City_State> dijkstraQueue =  new PriorityQueue<>();
-        
-        
+               
         // Repeat until the destination city has been added to the visited list;
-        while(current_City_Id!= final_Destination){
+        while(current_City_Id != final_Destination){
             /*  Form your current node check all the other adjacent nodes,that have not been visited
                 with those, put those states into the PQ with updated costs.      
             */
 
             // The length of all adjacent cities (very inefficient Order (n).
-            num_Of_AdjCities = adjacencyList.get(current_City_Id).size();
+            num_Of_AdjCities = adjacencyList.get(current_City_Id - 1).size();
             
+                
+                
             //  For all those adjacent cities go through the list and consider them.(Order (n))
             for (int i = 0; i < num_Of_AdjCities; i++){
                 
-
-               adj_City_Id = adjacencyList.get(current_City_Id).get(i).destination;
-                   adj_City_Cost = adjacencyList.get(current_City_Id).get(i).edge_Cost;
-
+               adj_City_Id = adjacencyList.get(current_City_Id - 1).get(i).destination;
+                   adj_City_Cost = adjacencyList.get(current_City_Id - 1).get(i).edge_Cost;
                 
                // If we have not visited city state yet.
                // Update the cost of the city and add it to the priority queue.
-               if(visited[adj_City_Id][num_Of_Passengers] != 0){
+               if(visited[adj_City_Id - 1][num_Of_Passengers - 1] != 1){
 
                         // NO ned to compare might end up with duplicate states in the PQ
-                        considered_City = new City_State(adj_City_Id, num_Of_Passengers, overall_Cost + (num_Of_Passengers * adj_City_Cost) );
-                        dijkstraQueue.add(considered_City);  
+                        
+                        if(num_Of_Passengers > 1 && num_Of_Passengers > num_Of_Pirates_Array[adj_City_Id - 1] ){
+                        
+                            considered_City = new City_State(adj_City_Id, (num_Of_Passengers - num_Of_Pirates_Array[adj_City_Id - 1]), overall_Cost + (num_Of_Passengers * adj_City_Cost));
+                        }
+                        
+                        else{
+                            considered_City = new City_State(adj_City_Id, num_Of_Passengers, overall_Cost + (num_Of_Passengers * adj_City_Cost));
+                        }
+                        
+                        dijkstraQueue.add(considered_City);
+                        
+                        System.out.print("Added to queue id: " + considered_City.id + 
+                                " passengers: " + considered_City.passengers + " Cost: " + considered_City.current_Cost + "\n");
                }                
             }
             
             //  Pop the top of the priority queue,and add it to the visited List.
             pop_City = dijkstraQueue.poll();
-            visited[pop_City.id][pop_City.passengers] = 1;
-
-            //Update the current city id and the overall cost so far.
+                
+                //Update the current city id and the overall cost so far.
             current_City_Id = pop_City.id;
-            overall_Cost = pop_City.current_Cost;
+            overall_Cost = pop_City.current_Cost;  
+                num_Of_Passengers = pop_City.passengers;
+                
+                System.out.print("current City: " + current_City_Id + " overall cost: "  + overall_Cost + " number of passengers " + num_Of_Passengers + "\n\n" );
+            visited[current_City_Id - 1][num_Of_Passengers - 1] = 1;      
         }
+        
+        return overall_Cost;
     }
 }
